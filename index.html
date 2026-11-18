@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clipper">
+<meta name="theme-color" content="#0e0e12">
+<title>Clipper</title>
+<style>
+:root{--bg:#0e0e12;--card:#18181f;--line:#2a2a34;--text:#f1f1f4;--dim:#8d8d9a;--hot:#ff4d5e;--warm:#ffb020;--ok:#39d98a;--tw:#a970ff}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 12px) 14px calc(env(safe-area-inset-bottom) + 86px)}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{font-size:20px;letter-spacing:-.3px}
+.pill{font-size:12px;padding:4px 10px;border-radius:999px;background:#24242d;color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+h2{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin:18px 2px 8px}
+.label{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+.score{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.1}
+.meter-top{display:flex;justify-content:space-between;align-items:flex-end}
+.bar{height:12px;background:#24242d;border-radius:8px;overflow:hidden;margin:10px 0 4px;position:relative}
+.fill{height:100%;width:0;border-radius:8px;transition:width .4s,background .4s}
+.mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff8;left:66.6%}
+.row{display:flex;gap:8px}
+.stat{flex:1;background:#121218;border-radius:12px;padding:9px}
+.stat b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+canvas{width:100%;height:80px;display:block;margin-top:10px}
+button{font:inherit;cursor:pointer}
+.big{width:100%;padding:16px;border:0;border-radius:14px;font-size:17px;font-weight:800;letter-spacing:.3px;margin-bottom:12px;color:#fff}
+.big:active{transform:scale(.98)}.big:disabled{opacity:.5}
+.red{background:var(--hot)}.green{background:#1f8f5a}.grey{background:#2a2a34}.purple{background:#7c4dff}
+.chan{padding:11px 0;border-top:1px solid var(--line)}.chan:first-child{border-top:0;padding-top:0}
+.chan.sel .cname{color:var(--warm)}
+.chead{display:flex;align-items:center;gap:9px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#2a2a34;flex:none;object-fit:cover}
+.cmain{flex:1;min-width:0}.cname{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cgame{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cstat{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.rm{background:#24242d;border:0;color:var(--dim);border-radius:8px;padding:6px 9px;font-size:13px}
+.mini{height:6px;background:#24242d;border-radius:4px;margin-top:8px;overflow:hidden}.mini div{height:100%;border-radius:4px;transition:width .4s}
+.addrow{display:flex;gap:8px;margin-top:12px}
+input[type=text],input[type=number],textarea{width:100%;min-width:0;background:#121218;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;font-size:16px;font-family:inherit}
+.addrow input{flex:1}
+.addrow button,.btn{background:var(--text);color:#000;border:0;border-radius:10px;padding:11px 16px;font-weight:800;font-size:15px;white-space:nowrap}
+.btn.ghost{background:#24242d;color:var(--text)}
+.hint{font-size:12px;color:var(--dim);margin-top:6px}
+.empty{color:var(--dim);font-size:14px;text-align:center;padding:10px}
+.banner{border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner.warn{background:#3d2e12;color:#ffd48a}.banner.err{background:#3d1218;color:#ffb3bb}.banner.info{background:#1d2440;color:#b9c6ff}
+.banner b{color:#fff}
+.moment{padding:12px 0;border-top:1px solid var(--line)}.moment:first-child{border-top:0;padding-top:0}
+.thumb{width:100%;aspect-ratio:16/9;border-radius:10px;background:#121218 center/cover;margin:8px 0;display:grid;place-items:center;color:var(--dim);font-size:13px;position:relative;overflow:hidden}
+.thumb .play{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;text-shadow:0 2px 12px #000}
+.mhead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mtitle{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:12px;padding:2px 8px;border-radius:999px;background:#24242d;color:var(--dim);white-space:nowrap}
+.tag.ready{background:#123d2a;color:var(--ok)}.tag.failed{background:#3d1218;color:var(--hot)}.tag.clipping{background:#3d2e12;color:var(--warm)}.tag.demo{background:#1d2440;color:#b9c6ff}
+.msub{font-size:13px;color:var(--dim)}
+.merr{font-size:13px;color:#ffb3bb;margin-top:6px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.links a,.links button{font-size:13px;color:var(--text);text-decoration:none;background:#24242d;padding:8px 11px;border-radius:9px;border:0;font-weight:600}
+.set{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.set:first-child{border-top:0;padding-top:0}
+.set .t{font-weight:600}.set .d{font-size:12px;color:var(--dim)}
+input[type=range]{width:100%;accent-color:var(--hot)}
+.switch{position:relative;width:50px;height:30px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:#2a2a34;border-radius:30px;transition:.2s}
+.switch span:before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--ok)}.switch input:checked+span:before{transform:translateX(20px)}
+ol.steps{padding-left:20px;font-size:14px;color:#d4d4dc}ol.steps li{margin:6px 0}
+code{background:#121218;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px;word-break:break-all}
+.msg{font-size:13px;padding:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg i{font-style:normal;color:var(--dim);font-size:11px;margin-right:5px}.msg span{font-weight:700;color:var(--tw);margin-right:5px}
+nav{position:fixed;left:0;right:0;bottom:0;background:#121218ee;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;padding:8px 8px calc(env(safe-area-inset-bottom) + 8px)}
+nav button{flex:1;background:none;border:0;color:var(--dim);font-size:12px;font-weight:600;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+nav button .ic{font-size:21px}nav button.on{color:var(--text)}
+.badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--hot);color:#fff;font-size:11px;border-radius:999px;padding:0 6px;min-width:18px}
+.view{display:none}.view.on{display:block}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(20px);background:#fff;color:#000;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.pbadge{font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:.4px;vertical-align:2px;margin-left:4px}
+.pb-twitch{background:#2b1a4a;color:#a970ff}.pb-kick{background:#163a0b;color:#53fc18}.pb-youtube{background:#3d1212;color:#ff5c5c}
+.tag.alert{background:#ff4d5e;color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.golink{display:block;text-align:center;background:var(--hot);color:#fff!important;font-weight:800;font-size:16px;padding:14px;border-radius:12px;text-decoration:none;margin-top:8px}
+.how{font-size:13px;color:#d4d4dc;margin-top:6px}
+.kickfix{background:#121218;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;font-size:13px}
+.kickfix .addrow{margin-top:8px}
+.msg span.k{color:#53fc18}.msg span.y{color:#ff5c5c}
+details{margin-top:8px}summary{color:#b9a3ff;font-size:14px;cursor:pointer}
+.steps a{color:#b9a3ff}
+.seg{display:flex;background:#121218;border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;color:var(--dim);font-weight:700;font-size:15px;padding:10px;border-radius:9px}
+.seg button.on{background:var(--text);color:#000}
+[dir=rtl] .bar,[dir=rtl] .mini,[dir=rtl] canvas{direction:ltr}
+[dir=rtl] ol.steps{padding-left:0;padding-right:20px}
+[dir=rtl] .msg i{margin-right:0;margin-left:5px}[dir=rtl] .msg span{margin-right:0;margin-left:5px}
+[dir=rtl] .pbadge{margin-left:0;margin-right:4px}
+[dir=rtl] body{font-family:-apple-system,"SF Arabic","Geeza Pro",system-ui,Tahoma,sans-serif}
+code,input[type=text]{unicode-bidi:plaintext}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔥 Clipper</h1>
+  <div class="pill"><span class="dot" id="dot"></span><span id="status"></span></div>
+</header>
+
+<!-- ============ LIVE ============ -->
+<section class="view on" id="v-live">
+  <div id="banners"></div>
+  <button class="big green" id="startBtn"></button>
+
+  <div class="card" id="focus" style="display:none">
+    <div class="meter-top"><div><div class="label" id="fname"></div><div class="score" id="score">0.0</div></div>
+      <div style="text-align:end"><div class="label" data-i="clipsAt">Clips at</div><div style="font-size:20px;font-weight:700" id="thr">3.0</div></div></div>
+    <div class="bar"><div class="fill" id="fill"></div><div class="mark"></div></div>
+    <div class="row" style="margin-top:10px">
+      <div class="stat"><span class="label" data-i="msgs"></span><b id="rate">0</b></div>
+      <div class="stat"><span class="label" data-i="normal"></span><b id="base">0</b></div>
+      <div class="stat"><span class="label" data-i="hypePct"></span><b id="hype">0</b></div>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+  <button class="big red" id="clipBtn" style="display:none">✂️ CLIP NOW</button>
+
+  <h2 data-i="streamers"></h2>
+  <div class="card">
+    <div id="chans"></div>
+    <form class="addrow" id="addForm"><input type="text" id="addIn" data-ph="addPh" autocapitalize="off" autocorrect="off" spellcheck="false"><button data-i="add"></button></form>
+    <div class="hint" id="addMsg" data-i="addHint"></div>
+    <div id="kickFix"></div>
+  </div>
+
+  <h2 data-i="liveChat"></h2>
+  <div class="card" id="chat"></div>
+</section>
+
+<!-- ============ CLIPS ============ -->
+<section class="view" id="v-clips">
+  <div class="banner info" data-i="clipsInfo"></div>
+  <div class="card" id="moments"></div>
+  <button class="big grey" id="clearClips" data-i="clear"></button>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="view" id="v-set">
+  <h2 data-i="langT"></h2>
+  <div class="card"><div class="seg" id="langPick"><button data-lang="en">English</button><button data-lang="ar">العربية</button></div></div>
+
+  <h2 data-i="twitchAuto"></h2>
+  <div class="card" id="acct"></div>
+
+  <h2>YouTube Live</h2>
+  <div class="card">
+    <div class="d" style="font-size:13px;color:var(--dim);margin-bottom:8px" data-i="ytNeed"></div>
+    <input type="text" id="ytKey" data-ph="ytKeyPh" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <details><summary data-i="ytHow"></summary>
+      <ol class="steps" style="margin-top:8px" data-i="ytSteps"></ol></details>
+    <div class="set" style="margin-top:10px"><div><div class="t" data-i="ytPollT"></div><div class="d" id="ytQuota"></div></div>
+      <input type="number" id="ytPoll" min="5" max="60" step="1" style="width:84px;text-align:center"></div>
+  </div>
+
+  <h2 data-i="clipping"></h2>
+  <div class="card">
+    <div class="set" style="display:block">
+      <div class="t" data-i="sens"></div>
+      <div class="d" id="sensTxt"></div>
+      <input type="range" id="sens" min="1.6" max="5" step="0.1">
+    </div>
+    <div class="set"><div><div class="t" data-i="durT"></div><div class="d" data-i="durD"></div></div>
+      <input type="number" id="dur" min="5" max="60" step="1" style="width:84px;text-align:center"></div>
+    <div class="set"><div><div class="t" data-i="coolT"></div><div class="d" data-i="coolD"></div></div>
+      <input type="number" id="cool" min="20" max="600" step="5" style="width:84px;text-align:center"></div>
+    <div class="set"><div><div class="t" data-i="gtaT"></div><div class="d" data-i="gtaD"></div></div>
+      <label class="switch"><input type="checkbox" id="gtaOnly"><span></span></label></div>
+    <div class="set"><div><div class="t" data-i="soundT"></div><div class="d" data-i="soundD"></div></div>
+      <label class="switch"><input type="checkbox" id="sound"><span></span></label></div>
+    <div class="set" style="display:block"><div class="t" data-i="tagsT"></div><div class="d" style="margin-bottom:6px" data-i="tagsD"></div>
+      <input type="text" id="tags"></div>
+  </div>
+
+  <h2 data-i="tryT"></h2>
+  <div class="card">
+    <div class="set"><div><div class="t" data-i="demoT"></div><div class="d" data-i="demoD"></div></div>
+      <label class="switch"><input type="checkbox" id="demo"><span></span></label></div>
+  </div>
+</section>
+
+<nav>
+  <button class="on" data-v="live"><span class="ic">📡</span><span data-i="navLive"></span></button>
+  <button data-v="clips"><span class="ic">🎬</span><span data-i="navMoments"></span><span class="badge" id="badge" style="display:none">0</span></button>
+  <button data-v="set"><span class="ic">⚙️</span><span data-i="navSet"></span></button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= storage ================= */
+const store={
+  get(k,d){try{const v=localStorage.getItem("clipper."+k);return v===null?d:JSON.parse(v)}catch(_){return d}},
+  set(k,v){try{localStorage.setItem("clipper."+k,JSON.stringify(v))}catch(_){}}
+};
+const DEFAULTS={lang:"",threshold:3,duration:30,cooldown:60,gtaOnly:false,sound:true,tags:"#gta6 #gtavi #gaming #clips #fyp",demo:false,ytKey:"",ytPoll:10};
+const S={
+  clientId:store.get("clientId",""),
+  token:store.get("token",""),
+  me:store.get("me",null),
+  // {p:'twitch'|'kick'|'youtube', login, name, id, img, room(kick), vid/chatId/handle/start(youtube)}
+  channels:store.get("channels",[]).map(c=>Object.assign({p:"twitch"},c)),
+  set:Object.assign({},DEFAULTS,store.get("settings",{})),
+  moments:store.get("moments",[]),
+};
+const save=()=>{store.set("clientId",S.clientId);store.set("token",S.token);store.set("me",S.me);
+  store.set("channels",S.channels);store.set("settings",S.set);store.set("moments",S.moments.slice(0,100))};
+const $=id=>document.getElementById(id);
+/* ================= languages ================= */
+const L={
+en:{
+ stopped:"stopped",demoRunning:"demo running",watching:"watching",connecting:"connecting…",
+ start:"▶ Start watching",stop:"⏸ Stop watching",hottest:"Hottest",clipsAt:"Clips at",msgs:"Msg/s",normal:"Normal",hypePct:"Hype %",
+ clipNow:"✂️ CLIP {n} NOW",streamers:"Streamers",addPh:"Paste a Twitch, Kick or YouTube link",add:"Add",
+ addHint:"Examples: youtube.com/@IShowSpeed · twitch.tv/name · kick.com/name — or just type a name",
+ liveChat:"Live chat",chatEmpty:"Chat appears when you start watching.",noStreamers:"Add streamers to watch.",
+ clipsInfo:"<b>Twitch</b>: a 30-second clip is created for you.<br><b>Kick / YouTube</b>: a red <b>GO CLIP</b> card appears. Tap it, then press the platform's ✂️ Clip button within a minute. Then add captions in <b>CapCut</b> (Text → Auto captions).",
+ noMoments:"No moments yet. They'll appear here.",clear:"Clear list",clearConfirm:"Tap again to clear",
+ langT:"Language",twitchAuto:"Twitch (auto clips)",ytNeed:"Needed to read YouTube chats. Free, made once.",ytKeyPh:"YouTube API key",
+ ytHow:"How to get a free API key (5 min)",
+ ytSteps:`<li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project (any name).</li>
+  <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API v3</a> → <b>Enable</b>.</li>
+  <li>Go to <b>APIs &amp; Services → Credentials → Create credentials → API key</b>.</li>
+  <li>Recommended: edit the key → <b>Websites</b> → add <code>{o}/*</code> so only your app can use it.</li>
+  <li>Copy the key and paste it above.</li>`,
+ ytPollT:"Check chat every",ytQuota:"seconds · ≈{a} h of 1 YouTube stream per day · {b} h left today",
+ clipping:"Clipping",sens:"Sensitivity",sensTxt:"Clip when chat is {x}× faster than normal — {l}",lvlMore:"more clips",lvlHuge:"only huge moments",lvlBal:"balanced",
+ durT:"Twitch clip length",durD:"5–60 seconds",coolT:"Wait between clips",coolD:"Per streamer, in seconds",
+ gtaT:"Only clip GTA 6",gtaD:"Twitch only: skip other games",soundT:"Sound on new moment",soundD:"A short beep",
+ tagsT:"Hashtags",tagsD:"Added to the caption you copy",tryT:"Try it without accounts",demoT:"Demo mode",demoD:"Fake Twitch, Kick and YouTube streamers",
+ navLive:"Live",navMoments:"Moments",navSet:"Settings",
+ twLoginExpired:"Twitch login expired. Log in again in Settings.",ytNeedKey:"Add your YouTube API key in Settings",
+ ytQuotaErr:"YouTube daily limit used up (resets at 9am)",ytChatEnded:"Live chat ended",ytNoChat:"No live chat (stream ended?)",
+ ytChanNF:"YouTube channel not found. Check the spelling (e.g. @IShowSpeed).",ytVidNF:"YouTube video not found",ytPaste:"Paste a YouTube link like youtube.com/@IShowSpeed",
+ "@ytLive":"🔴 live on YouTube","@ytEnded":"stream ended — waiting for next live","@ytOffline":"offline — starts when they go live",
+ "@kickNeedId":"needs chat ID","@kickActive":"chat active","@kickWaiting":"waiting for chat…",notWatching:"not watching",offline:"offline",
+ pasteCid:"Paste your Client ID first",loginCancel:"Twitch login cancelled",loginFail:"Login check failed, try again",loggedIn:"✅ Logged in to Twitch",
+ ytLiveNow:"🔴 {n} is live on YouTube",goClipT:"🚨 GO CLIP {n} on {p}",demoClip:"🎬 Demo clip of {n}",clipReady:"🎬 Clip ready: {n}",
+ addFirst:"Add a streamer first",copied:"Copied",copyFail:"Couldn't copy",capCopied:"Caption copied",linkCopied:"Link copied",redirCopied:"Redirect URL copied",
+ clippingN:"✂️ Clipping {n}…",demoOn:"Demo mode on — tap Start on the Live tab",demoOff:"Demo mode off",
+ "@noteProc":"Still processing on Twitch — open the link in a minute.","@noteFollow":"This streamer only lets followers/subs clip, so clip it yourself:",
+ "@noteNotLive":"Twitch says the stream isn't live.",clipYourself:" — clip it yourself:",
+ bnAdd:"Paste a <b>Twitch</b>, <b>Kick</b> or <b>YouTube</b> live link below to start. Or try <b>Demo mode</b> in ⚙️ Settings.",
+ bnTwLogin:"Twitch: you'll get <b>GO CLIP</b> alerts. <b>Log in to Twitch</b> in ⚙️ Settings to get clips made automatically.",
+ bnYtKey:"YouTube needs a free <b>API key</b> — add it in ⚙️ Settings.",
+ bnKeep:"Keep this page <b>open on screen</b> with your phone plugged in. iPhone pauses it if you lock the phone or switch apps.",
+ bnAutoLock:" Set <b>Settings → Display → Auto-Lock → Never</b>.",bnDemo:"<b>Demo mode:</b> fake streamers on all 3 platforms. Hype bursts start after about 70 seconds.",
+ removeQ:"Remove?",goClipBtn:"🚨 GO CLIP NOW on {p}",openStream:"Open stream",
+ tooLate:"More than 90 s ago — the live clip button may not reach it anymore.",useReplay:" Use <b>Watch in replay</b> instead.",
+ howKick:"Open it and tap <b>Clip</b> (✂️) under the player — Kick grabs the last 30–60 s.",
+ howYt:"Open it and tap <b>✂️ Clip</b> under the video (on the live stream) — pick the last 30–60 s.",
+ howTw:"Open it and tap the <b>clip</b> button on the player.",
+ making:"⏳ Twitch is making the clip…",demoNoVid:"🎬 Demo clip (no video)",processing:"Processing…",
+ tag_alert:"go clip",tag_missed:"missed?",tag_ready:"ready",tag_clipping:"clipping",tag_demo:"demo",tag_failed:"failed",
+ manual:"✂️ Manual",score:"score",openClip:"▶ Open clip",editTrim:"✏️ Edit / trim",watchReplay:"⏪ Watch in replay",
+ copyCap:"📋 Copy caption",copyLink:"🔗 Copy link",dlTwitch:"⬇ Download (Twitch)",dlKick:"⬇ My Kick clips",
+ loggedAs:"✅ Logged in as {n}",loggedNo:"✅ Logged in",acctD:"Twitch clips are created in your account",logout:"Log out",
+ twOptional:"Optional. Without it you still get GO CLIP alerts for Twitch.",twSetup:"Set up Twitch login (5 min, once)",
+ twSteps:`<li>Open <a href="https://dev.twitch.tv/console/apps/create" target="_blank" rel="noopener">dev.twitch.tv → Register Your Application</a> and log in with Twitch. (Twitch asks you to turn on two-factor login first.)</li>
+  <li>Name: anything, e.g. <code>{name}</code></li>
+  <li>OAuth Redirect URL — paste exactly this: <code>{r}</code> <button class="btn ghost" id="copyRedir" style="padding:5px 10px;font-size:12px">Copy</button></li>
+  <li>Category: <b>Application Integration</b> · Client Type: <b>Public</b> → Create</li>
+  <li>Tap <b>Manage</b>, copy the <b>Client ID</b> and paste it here:</li>`,
+ cidPh:"Twitch Client ID",loginBtn:"Log in with Twitch",
+ already:"Already added",max10:"Max 10 streamers",addedN:"Added {n} ✓",pasteAny:"Paste a twitch.tv, kick.com or youtube.com link",
+ noTwitch:"No Twitch streamer called {n}",lookKick:"Looking up {n} on Kick…",
+ ytNeedKeyHtml:"YouTube needs a free API key first — add it in <b>⚙️ Settings → YouTube Live</b>.",lookYt:"Looking up on YouTube…",
+ addedLive:"Added {n} — live now 🔴",addedOff:"Added {n} — not live now. The app starts automatically when they go live (while it's running).",
+ askP:"Where does <b>{n}</b> stream?",
+ kickFix:`<b>One more step for Kick:</b> Kick doesn't let apps look up the chat number, so paste it once.
+  <ol class="steps" style="margin-top:6px"><li>Open <a href="https://kick.com/api/v2/channels/{s}" target="_blank" rel="noopener" style="color:#53fc18">this Kick page</a></li>
+  <li>Tap ⋯ → <b>Find in page</b> → type <code>chatroom</code></li><li>Copy the number right after <code>"id":</code> and paste it here:</li></ol>`,
+ kfPh:"Chat number, e.g. 1234567",save:"Save"
+},
+ar:{
+ stopped:"متوقف",demoRunning:"العرض التجريبي يعمل",watching:"يراقب",connecting:"جارٍ الاتصال…",
+ start:"▶ ابدأ المراقبة",stop:"⏸ أوقف المراقبة",hottest:"الأكثر حماسًا",clipsAt:"القص عند",msgs:"رسالة/ث",normal:"العادي",hypePct:"الحماس %",
+ clipNow:"✂️ اقطع {n} الآن",streamers:"الستريمرز",addPh:"الصق رابط Twitch أو Kick أو YouTube",add:"إضافة",
+ addHint:"أمثلة: youtube.com/@IShowSpeed · twitch.tv/name · kick.com/name — أو اكتب الاسم فقط",
+ liveChat:"الشات المباشر",chatEmpty:"يظهر الشات عندما تبدأ المراقبة.",noStreamers:"أضف ستريمرز لمراقبتهم.",
+ clipsInfo:"<b>Twitch</b>: يتم إنشاء مقطع مدته 30 ثانية تلقائيًا.<br><b>Kick / YouTube</b>: تظهر بطاقة حمراء <b>اقطع الآن</b>. اضغط عليها ثم اضغط زر ✂️ Clip في المنصة خلال دقيقة. بعدها أضف الترجمة في <b>CapCut</b> (نص ← ترجمة تلقائية).",
+ noMoments:"لا توجد لحظات بعد. ستظهر هنا.",clear:"مسح القائمة",clearConfirm:"اضغط مرة أخرى للمسح",
+ langT:"اللغة",twitchAuto:"Twitch (قص تلقائي)",ytNeed:"مطلوب لقراءة شات YouTube. مجاني، مرة واحدة فقط.",ytKeyPh:"مفتاح YouTube API",
+ ytHow:"كيف تحصل على مفتاح مجاني (5 دقائق)",
+ ytSteps:`<li>افتح <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> وأنشئ مشروعًا (أي اسم).</li>
+  <li>افتح <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API v3</a> ← <b>Enable</b>.</li>
+  <li>اذهب إلى <b>APIs &amp; Services ← Credentials ← Create credentials ← API key</b>.</li>
+  <li>يُنصح: عدّل المفتاح ← <b>Websites</b> ← أضف <code>{o}/*</code> حتى لا يستخدمه إلا تطبيقك.</li>
+  <li>انسخ المفتاح والصقه في الأعلى.</li>`,
+ ytPollT:"افحص الشات كل",ytQuota:"ثانية · ≈{a} ساعة لبث YouTube واحد يوميًا · متبقي {b} ساعة اليوم",
+ clipping:"القص",sens:"الحساسية",sensTxt:"اقطع عندما يكون الشات أسرع بـ {x}× من العادي — {l}",lvlMore:"مقاطع أكثر",lvlHuge:"اللحظات الكبيرة فقط",lvlBal:"متوازن",
+ durT:"طول مقطع Twitch",durD:"من 5 إلى 60 ثانية",coolT:"الانتظار بين المقاطع",coolD:"لكل ستريمر، بالثواني",
+ gtaT:"قص GTA 6 فقط",gtaD:"Twitch فقط: تجاهل الألعاب الأخرى",soundT:"صوت عند لحظة جديدة",soundD:"صفارة قصيرة",
+ tagsT:"الهاشتاغات",tagsD:"تُضاف إلى الوصف الذي تنسخه",tryT:"جرّبه بدون حسابات",demoT:"الوضع التجريبي",demoD:"ستريمرز وهميون على Twitch وKick وYouTube",
+ navLive:"مباشر",navMoments:"اللحظات",navSet:"الإعدادات",
+ twLoginExpired:"انتهت جلسة Twitch. سجّل الدخول مرة أخرى من الإعدادات.",ytNeedKey:"أضف مفتاح YouTube API في الإعدادات",
+ ytQuotaErr:"انتهى الحد اليومي لـ YouTube (يتجدد الساعة 9 صباحًا)",ytChatEnded:"انتهى الشات المباشر",ytNoChat:"لا يوجد شات مباشر (انتهى البث؟)",
+ ytChanNF:"لم يتم العثور على قناة YouTube. تحقق من الكتابة (مثال: ‎@IShowSpeed).",ytVidNF:"لم يتم العثور على الفيديو",ytPaste:"الصق رابط YouTube مثل youtube.com/@IShowSpeed",
+ "@ytLive":"🔴 مباشر على YouTube","@ytEnded":"انتهى البث — بانتظار البث القادم","@ytOffline":"غير متصل — يبدأ تلقائيًا عند البث",
+ "@kickNeedId":"يحتاج رقم الشات","@kickActive":"الشات نشط","@kickWaiting":"بانتظار الشات…",notWatching:"لا يراقب",offline:"غير متصل",
+ pasteCid:"الصق الـ Client ID أولًا",loginCancel:"تم إلغاء تسجيل الدخول",loginFail:"فشل التحقق، حاول مرة أخرى",loggedIn:"✅ تم تسجيل الدخول إلى Twitch",
+ ytLiveNow:"🔴 {n} في بث مباشر على YouTube",goClipT:"🚨 اقطع {n} الآن على {p}",demoClip:"🎬 مقطع تجريبي لـ {n}",clipReady:"🎬 المقطع جاهز: {n}",
+ addFirst:"أضف ستريمر أولًا",copied:"تم النسخ",copyFail:"تعذّر النسخ",capCopied:"تم نسخ الوصف",linkCopied:"تم نسخ الرابط",redirCopied:"تم نسخ الرابط",
+ clippingN:"✂️ جارٍ قص {n}…",demoOn:"الوضع التجريبي مفعّل — اضغط ابدأ في صفحة مباشر",demoOff:"تم إيقاف الوضع التجريبي",
+ "@noteProc":"ما زال Twitch يجهّز المقطع — افتح الرابط بعد دقيقة.","@noteFollow":"هذا الستريمر يسمح بالقص للمتابعين/المشتركين فقط، اقطعه بنفسك:",
+ "@noteNotLive":"Twitch يقول إن البث غير مباشر.",clipYourself:" — اقطعه بنفسك:",
+ bnAdd:"الصق رابط بث <b>Twitch</b> أو <b>Kick</b> أو <b>YouTube</b> في الأسفل للبدء. أو جرّب <b>الوضع التجريبي</b> في ⚙️ الإعدادات.",
+ bnTwLogin:"Twitch: ستصلك تنبيهات <b>اقطع الآن</b>. <b>سجّل الدخول إلى Twitch</b> في ⚙️ الإعدادات ليتم إنشاء المقاطع تلقائيًا.",
+ bnYtKey:"YouTube يحتاج <b>مفتاح API</b> مجاني — أضفه في ⚙️ الإعدادات.",
+ bnKeep:"اترك هذه الصفحة <b>مفتوحة على الشاشة</b> والهاتف على الشاحن. الآيفون يوقفها إذا قفلت الهاتف أو انتقلت لتطبيق آخر.",
+ bnAutoLock:" اضبط <b>الإعدادات ← شاشة العرض ← القفل التلقائي ← أبدًا</b>.",bnDemo:"<b>الوضع التجريبي:</b> ستريمرز وهميون على المنصات الثلاث. تبدأ لحظات الحماس بعد حوالي 70 ثانية.",
+ removeQ:"حذف؟",goClipBtn:"🚨 اقطع الآن على {p}",openStream:"افتح البث",
+ tooLate:"مرّ أكثر من 90 ثانية — قد لا يصل زر القص المباشر إليها.",useReplay:" استخدم <b>شاهد في الإعادة</b> بدلًا من ذلك.",
+ howKick:"افتحه واضغط <b>Clip</b> (✂️) تحت المشغل — Kick يأخذ آخر 30 إلى 60 ثانية.",
+ howYt:"افتحه واضغط <b>✂️ Clip</b> تحت الفيديو (في البث المباشر) — اختر آخر 30 إلى 60 ثانية.",
+ howTw:"افتحه واضغط زر <b>clip</b> في المشغل.",
+ making:"⏳ Twitch يجهّز المقطع…",demoNoVid:"🎬 مقطع تجريبي (بدون فيديو)",processing:"جارٍ التجهيز…",
+ tag_alert:"اقطع الآن",tag_missed:"فاتك؟",tag_ready:"جاهز",tag_clipping:"جارٍ القص",tag_demo:"تجريبي",tag_failed:"فشل",
+ manual:"✂️ يدوي",score:"النتيجة",openClip:"▶ افتح المقطع",editTrim:"✏️ تعديل / قص",watchReplay:"⏪ شاهد في الإعادة",
+ copyCap:"📋 انسخ الوصف",copyLink:"🔗 انسخ الرابط",dlTwitch:"⬇ تحميل (Twitch)",dlKick:"⬇ مقاطعي على Kick",
+ loggedAs:"✅ مسجّل باسم {n}",loggedNo:"✅ تم تسجيل الدخول",acctD:"يتم إنشاء مقاطع Twitch في حسابك",logout:"تسجيل الخروج",
+ twOptional:"اختياري. بدونه تصلك تنبيهات «اقطع الآن» لـ Twitch.",twSetup:"إعداد تسجيل الدخول إلى Twitch (5 دقائق، مرة واحدة)",
+ twSteps:`<li>افتح <a href="https://dev.twitch.tv/console/apps/create" target="_blank" rel="noopener">dev.twitch.tv ← Register Your Application</a> وسجّل الدخول بحساب Twitch. (سيطلب منك Twitch تفعيل التحقق بخطوتين أولًا.)</li>
+  <li>الاسم: أي اسم، مثلًا <code>{name}</code></li>
+  <li>OAuth Redirect URL — الصق هذا بالضبط: <code dir="ltr">{r}</code> <button class="btn ghost" id="copyRedir" style="padding:5px 10px;font-size:12px">نسخ</button></li>
+  <li>Category: <b>Application Integration</b> · Client Type: <b>Public</b> ← Create</li>
+  <li>اضغط <b>Manage</b>، انسخ الـ <b>Client ID</b> والصقه هنا:</li>`,
+ cidPh:"Twitch Client ID",loginBtn:"تسجيل الدخول عبر Twitch",
+ already:"مضاف مسبقًا",max10:"الحد الأقصى 10 ستريمرز",addedN:"تمت إضافة {n} ✓",pasteAny:"الصق رابط twitch.tv أو kick.com أو youtube.com",
+ noTwitch:"لا يوجد ستريمر على Twitch باسم {n}",lookKick:"جارٍ البحث عن {n} على Kick…",
+ ytNeedKeyHtml:"YouTube يحتاج مفتاح API مجاني أولًا — أضفه في <b>⚙️ الإعدادات ← YouTube Live</b>.",lookYt:"جارٍ البحث على YouTube…",
+ addedLive:"تمت إضافة {n} — في بث مباشر الآن 🔴",addedOff:"تمت إضافة {n} — ليس في بث الآن. سيبدأ التطبيق تلقائيًا عندما يبدأ البث (أثناء تشغيله).",
+ askP:"أين يبث <b>{n}</b>؟",
+ kickFix:`<b>خطوة إضافية لـ Kick:</b> Kick لا يسمح للتطبيقات بمعرفة رقم الشات، لذا الصقه مرة واحدة.
+  <ol class="steps" style="margin-top:6px"><li>افتح <a href="https://kick.com/api/v2/channels/{s}" target="_blank" rel="noopener" style="color:#53fc18">صفحة Kick هذه</a></li>
+  <li>اضغط ⋯ ← <b>البحث في الصفحة</b> ← اكتب <code>chatroom</code></li><li>انسخ الرقم الذي بعد <code>"id":</code> والصقه هنا:</li></ol>`,
+ kfPh:"رقم الشات، مثلًا 1234567",save:"حفظ"
+}};
+function lang(){return S.set.lang||((navigator.language||"").startsWith("ar")?"ar":"en")}
+function t(k,v){let s=(L[lang()]||L.en)[k];if(s===undefined)s=L.en[k];if(s===undefined)return k;
+  if(v)for(const x in v)s=s.split("{"+x+"}").join(v[x]);return s}
+const tg=g=>g&&g[0]==="@"?t(g):(g||"");
+function applyLang(){
+  const l=lang();document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-i]").forEach(e=>e.innerHTML=t(e.dataset.i,{o:location.origin}));
+  document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.dataset.ph));
+  document.querySelectorAll("#langPick button").forEach(b=>b.classList.toggle("on",b.dataset.lang===l));
+}
+
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const REDIRECT=location.origin+location.pathname;
+const key=c=>c.p+":"+c.login;
+const PNAME={twitch:"TWITCH",kick:"KICK",youtube:"YOUTUBE"};
+const pbadge=p=>`<span class="pbadge pb-${p}">${PNAME[p]||p}</span>`;
+function streamUrl(c){return c.p==="twitch"?"https://www.twitch.tv/"+c.login:c.p==="kick"?"https://kick.com/"+c.login:
+  (c.vid?"https://www.youtube.com/watch?v="+c.vid:"https://www.youtube.com/"+(c.handle||"channel/"+c.login))}
+function creditFor(c){return c.p==="twitch"?"twitch.tv/"+c.login:c.p==="kick"?"kick.com/"+c.login:"youtube.com/"+(c.handle||c.name)}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2600)}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ================= hype detector ================= */
+const HYPE_WORDS=["KEKW","LUL","LOL","LMAO","LMFAO","OMEGALUL","POG","POGGERS","PogChamp","W","WTF","OMG","MDR","PTDR","XD","GG","Sheesh","NAHHH","ICANT","Clap","EZ"];
+const HYPE_RE=new RegExp(HYPE_WORDS.map(w=>"(?<![\\w])"+w+"(?![\\w])").join("|")+"|😂|💀|🔥|😭|🤣|😱|\\?{3,}|!{3,}|(?:ha){3,}|(?:xd){2,}|emote:\\d+:(?:KEKW|LUL|OMEGALUL|ICANT|Clap)|هه+ه|خخ+خ|ا{4,}|(?:^|\\s)لو+ل(?=$|\\s)|وا+و+|يا ?ساتر|مستحيل|ابدااا|😹","i");
+const CLIP_RE=/\bclip|كليب|(?:^|\s)قص(?:ها|ه)?(?=$|\s|!|؟)/i;
+class Detector{
+  constructor(lag){this.window=8;this.lag=lag||0;this.msgs=[];this.baseline=null;this.started=null;this.last=-1e9;this.stats={};this.history=[];this.lastMsg=0}
+  add(t,user,text){if(this.started===null)this.started=Date.now()/1000;this.lastMsg=Date.now()/1000;this.msgs.push([t,user,text]);
+    if(this.msgs.length>1&&t<this.msgs[this.msgs.length-2][0])this.msgs.sort((a,b)=>a[0]-b[0])}
+  check(realNow){
+    const st=S.set,now=realNow-this.lag;if(this.started===null)this.started=realNow;
+    const cut=now-60;while(this.msgs.length&&this.msgs[0][0]<cut)this.msgs.shift();
+    const win=this.msgs.filter(m=>m[0]>=now-this.window&&m[0]<=now),n=win.length,rate=n/this.window;
+    if(this.baseline===null){if(realNow-this.started<this.window+this.lag){this.push(rate);return null}this.baseline=rate}
+    const base=Math.max(this.baseline,0.3);
+    const hypeMsgs=win.filter(m=>HYPE_RE.test(m[2])),hype=n?hypeMsgs.length/n:0;
+    const clipCalls=new Set(win.filter(m=>CLIP_RE.test(m[2])).map(m=>m[1])).size;
+    const unique=new Set(win.map(m=>m[1])).size;
+    const score=(rate/base)*(1+hype);
+    this.stats={rate,baseline:base,score,hype:Math.round(hype*100)};this.push(rate);
+    if(score<st.threshold*0.7)this.baseline+=(rate-this.baseline)/90;
+    let thr=st.threshold;if(base>10)thr=Math.max(1.6,thr*0.65);
+    const ok=realNow-this.started>=60&&realNow-this.last>=st.cooldown&&n>=8&&unique>=4&&(score>=thr||clipCalls>=3);
+    if(!ok)return null;
+    this.last=realNow;
+    const pool=hypeMsgs.length?hypeMsgs:win,cnt={};
+    pool.forEach(m=>{const k=m[2].replace(/\[emote:\d+:(\w+)\]/g,"$1").trim().slice(0,40);cnt[k]=(cnt[k]||0)+1});
+    const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+    return {score:+score.toFixed(2),rate:+rate.toFixed(2),hype:Math.round(hype*100),clipCalls,top};
+  }
+  push(r){this.history.push(r);if(this.history.length>120)this.history.shift()}
+}
+
+/* ================= twitch api ================= */
+async function helix(path,opt={}){
+  const r=await fetch("https://api.twitch.tv/helix"+path,{method:opt.method||"GET",
+    headers:{"Client-Id":S.clientId,"Authorization":"Bearer "+S.token}});
+  if(r.status===401){S.token="";save();renderAcct();renderBanners();throw new Error(t("twLoginExpired"))}
+  let body={};try{body=await r.json()}catch(_){}
+  if(!r.ok){const e=new Error(body.message||("Twitch error "+r.status));e.status=r.status;throw e}
+  return body;
+}
+async function validate(){
+  if(!S.token)return false;
+  try{const r=await fetch("https://id.twitch.tv/oauth2/validate",{headers:{Authorization:"OAuth "+S.token}});
+    if(!r.ok){S.token="";save();return false}
+    const d=await r.json();S.me={login:d.login,id:d.user_id};save();return true}
+  catch(_){return !!S.token}
+}
+function login(){
+  if(!S.clientId){toast(t("pasteCid"));return}
+  const state=Math.random().toString(36).slice(2);store.set("oauthState",state);
+  location.href="https://id.twitch.tv/oauth2/authorize?response_type=token&client_id="+encodeURIComponent(S.clientId)+
+    "&redirect_uri="+encodeURIComponent(REDIRECT)+"&scope=clips%3Aedit&state="+state;
+}
+function readLoginRedirect(){
+  if(!location.hash.includes("access_token")&&!location.hash.includes("error"))return;
+  const p=new URLSearchParams(location.hash.slice(1));
+  history.replaceState(null,"",location.pathname);
+  if(p.get("error")){toast(t("loginCancel"));return}
+  if(p.get("state")!==store.get("oauthState","")){toast(t("loginFail"));return}
+  S.token=p.get("access_token");save();toast(t("loggedIn"));
+}
+async function resolveTwitchIds(){
+  const miss=S.channels.filter(c=>c.p==="twitch"&&!c.id);
+  if(!S.token||!miss.length)return;
+  try{const d=await helix("/users?"+miss.map(c=>"login="+encodeURIComponent(c.login)).join("&"));
+    d.data.forEach(u=>{const c=S.channels.find(x=>x.p==="twitch"&&x.login===u.login);if(c){c.id=u.id;c.name=u.display_name;c.img=u.profile_image_url}});save()}catch(_){}
+}
+
+/* ================= TWITCH chat (anonymous IRC) ================= */
+const twitchChat={ws:null,joined:new Set(),want:false,
+  connect(){
+    if(this.ws&&this.ws.readyState<2)return;
+    const ws=new WebSocket("wss://irc-ws.chat.twitch.tv:443");this.ws=ws;
+    ws.onopen=()=>{ws.send("NICK justinfan"+Math.floor(10000+Math.random()*89999));this.joined.clear();this.sync();setStatus()};
+    ws.onmessage=e=>{for(const line of String(e.data).split("\r\n")){
+      if(!line)continue;
+      if(line.startsWith("PING")){ws.send("PONG"+line.slice(4));continue}
+      const m=line.match(/^:(\w+)!\S+ PRIVMSG #(\w+) :(.*)$/);
+      if(m)onChat("twitch:"+m[2],m[1],m[3]);}};
+    ws.onclose=()=>{setStatus();if(this.want)setTimeout(()=>this.connect(),3000)};
+    ws.onerror=()=>{try{ws.close()}catch(_){}}
+  },
+  sync(){if(!this.ws||this.ws.readyState!==1)return;
+    const want=new Set(S.channels.filter(c=>c.p==="twitch").map(c=>c.login));
+    const add=[...want].filter(x=>!this.joined.has(x)),rm=[...this.joined].filter(x=>!want.has(x));
+    if(add.length)this.ws.send("JOIN "+add.map(x=>"#"+x).join(","));
+    if(rm.length)this.ws.send("PART "+rm.map(x=>"#"+x).join(","));
+    add.forEach(x=>this.joined.add(x));rm.forEach(x=>this.joined.delete(x));},
+  start(){if(!S.channels.some(c=>c.p==="twitch"))return;this.want=true;this.connect()},
+  stop(){this.want=false;if(this.ws)this.ws.close()},
+  ok(){return !!this.ws&&this.ws.readyState===1}
+};
+
+/* ================= KICK chat (Pusher websocket) ================= */
+const KICK_WS="wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0-rc2&flash=false";
+const kickChat={ws:null,subs:new Map(),want:false,
+  connect(){
+    if(this.ws&&this.ws.readyState<2)return;
+    const ws=new WebSocket(KICK_WS);this.ws=ws;
+    ws.onopen=()=>{this.subs.clear();setStatus()};
+    ws.onmessage=e=>{let ev;try{ev=JSON.parse(e.data)}catch(_){return}
+      if(ev.event==="pusher:connection_established"){this.sync();return}
+      if(ev.event==="pusher:ping"){ws.send(JSON.stringify({event:"pusher:pong",data:{}}));return}
+      if(String(ev.event).endsWith("ChatMessageEvent")){let d;try{d=typeof ev.data==="string"?JSON.parse(ev.data):ev.data}catch(_){return}
+        const room=String(d.chatroom_id||(ev.channel||"").split(".")[1]||""),login=this.subs.get(room);
+        if(login)onChat("kick:"+login,(d.sender||{}).username||"?",d.content||"")}};
+    ws.onclose=()=>{setStatus();if(this.want)setTimeout(()=>this.connect(),3000)};
+    ws.onerror=()=>{try{ws.close()}catch(_){}}
+  },
+  sync(){if(!this.ws||this.ws.readyState!==1)return;
+    const want=new Map(S.channels.filter(c=>c.p==="kick"&&c.room).map(c=>[String(c.room),c.login]));
+    for(const [room,login] of want)if(!this.subs.has(room)){
+      this.ws.send(JSON.stringify({event:"pusher:subscribe",data:{auth:"",channel:"chatrooms."+room+".v2"}}));this.subs.set(room,login)}
+    for(const room of [...this.subs.keys()])if(!want.has(room)){
+      this.ws.send(JSON.stringify({event:"pusher:unsubscribe",data:{channel:"chatrooms."+room+".v2"}}));this.subs.delete(room)}
+  },
+  start(){if(!S.channels.some(c=>c.p==="kick"&&c.room))return;this.want=true;this.connect()},
+  stop(){this.want=false;if(this.ws)this.ws.close()},
+  ok(){return !!this.ws&&this.ws.readyState===1}
+};
+async function kickLookup(slug){
+  const r=await fetch("https://kick.com/api/v2/channels/"+encodeURIComponent(slug),{headers:{Accept:"application/json"}});
+  if(!r.ok)throw new Error("kick "+r.status);
+  const d=await r.json();
+  return {room:d.chatroom&&d.chatroom.id,name:(d.user&&d.user.username)||slug,img:d.user&&d.user.profile_pic,live:!!d.livestream};
+}
+
+/* ================= YOUTUBE chat (Data API polling) ================= */
+async function yt(path){
+  if(!S.set.ytKey)throw new Error(t("ytNeedKey"));
+  const r=await fetch("https://www.googleapis.com/youtube/v3/"+path+(path.includes("?")?"&":"?")+"key="+encodeURIComponent(S.set.ytKey));
+  let b={};try{b=await r.json()}catch(_){}
+  if(!r.ok){const reason=(((b.error||{}).errors||[])[0]||{}).reason||"";
+    const e=new Error(reason==="quotaExceeded"?t("ytQuotaErr"):reason==="liveChatEnded"?t("ytChatEnded"):
+      reason==="liveChatNotFound"?t("ytNoChat"):((b.error||{}).message||"YouTube error "+r.status));e.reason=reason;throw e}
+  return b;
+}
+async function ytChannel(q){ // q = "forHandle=@x" or "id=UC…"
+  const ch=await yt("channels?part=snippet,contentDetails&"+q);
+  if(!ch.items||!ch.items.length)throw new Error(t("ytChanNF"));
+  const it=ch.items[0];
+  return {p:"youtube",login:it.id,name:it.snippet.title,handle:it.snippet.customUrl||"",
+    img:((it.snippet.thumbnails||{}).default||{}).url||"",uploads:it.contentDetails.relatedPlaylists.uploads};
+}
+function ytApplyLive(c,v){ // v = videos.list item
+  const ls=v.liveStreamingDetails||{};
+  if(v.snippet.liveBroadcastContent==="live"&&ls.activeLiveChatId){
+    c.vid=v.id;c.chatId=ls.activeLiveChatId;c.start=ls.actualStartTime?Date.parse(ls.actualStartTime):Date.now();return true}
+  return false;
+}
+async function ytCheckLive(c,allowSearch){
+  // cheap: newest uploads (1 unit) + their details (1 unit). Live streams show up in uploads while live.
+  R.ytUnits+=2;
+  const pl=await yt("playlistItems?part=contentDetails&maxResults=5&playlistId="+encodeURIComponent(c.uploads||("UU"+c.login.slice(2))));
+  const ids=(pl.items||[]).map(i=>i.contentDetails.videoId).join(",");
+  if(ids){const v=await yt("videos?part=snippet,liveStreamingDetails&id="+ids);
+    for(const it of v.items||[])if(ytApplyLive(c,it))return true}
+  if(allowSearch){ // only when you add a channel: 100 units
+    R.ytUnits+=101;
+    const sr=await yt("search?part=id&type=video&eventType=live&maxResults=1&channelId="+c.login);
+    if(sr.items&&sr.items.length){const v=await yt("videos?part=snippet,liveStreamingDetails&id="+sr.items[0].id.videoId);
+      if(v.items&&v.items.length&&ytApplyLive(c,v.items[0]))return true}
+  }
+  c.vid="";c.chatId="";return false;
+}
+async function ytResolve(input){
+  const vid=(input.match(/(?:v=|youtu\.be\/|\/live\/|\/shorts\/)([\w-]{11})/)||[])[1];
+  const handle=(input.match(/youtube\.com\/(@[^\/?#\s]+)/i)||input.match(/^(@[^\/?#\s]+)$/)||[])[1];
+  const cid=(input.match(/youtube\.com\/channel\/(UC[\w-]{22})/)||[])[1];
+  let c;
+  if(vid){
+    R.ytUnits+=1;const v=await yt("videos?part=snippet,liveStreamingDetails&id="+vid);
+    if(!v.items||!v.items.length)throw new Error(t("ytVidNF"));
+    c=await ytChannel("id="+v.items[0].snippet.channelId);
+    if(!ytApplyLive(c,v.items[0]))await ytCheckLive(c,false);
+  }else if(handle||cid){
+    c=await ytChannel(handle?"forHandle="+encodeURIComponent(decodeURIComponent(handle)):"id="+cid);
+    await ytCheckLive(c,true);
+  }else throw new Error(t("ytPaste"));
+  return c;
+}
+const ytPollers={};
+function ytStart(c){
+  if(ytPollers[c.login]||!c.chatId)return;
+  const P={stop:false,token:"",since:Date.now()-5000};ytPollers[c.login]=P;
+  R.live[key(c)]={live:true,game:"@ytLive"};
+  (async()=>{while(!P.stop){
+    let wait=Math.max(5,+S.set.ytPoll||10)*1000;
+    try{const d=await yt("liveChat/messages?part=snippet,authorDetails&maxResults=2000&liveChatId="+encodeURIComponent(c.chatId)+(P.token?"&pageToken="+P.token:""));
+      R.ytUnits+=5;
+      P.token=d.nextPageToken||P.token;wait=Math.max(wait,d.pollingIntervalMillis||0);
+      for(const m of d.items||[]){const t=Date.parse(m.snippet.publishedAt);if(t<P.since)continue;
+        onChat(key(c),(m.authorDetails||{}).displayName||"?",(m.snippet.displayMessage||(m.snippet.textMessageDetails||{}).messageText||""),t/1000)}
+      R.live[key(c)]={live:true,game:"@ytLive"};
+    }catch(e){
+      if(e.reason==="liveChatEnded"||e.reason==="liveChatNotFound"||e.reason==="forbidden"||e.reason==="liveChatDisabled"){
+        c.chatId="";c.vid="";save();R.live[key(c)]={live:false,game:"@ytEnded"};break}
+      if(e.reason==="quotaExceeded"){R.live[key(c)]={live:null,game:e.message};toast(e.message);break}
+      R.live[key(c)]={live:null,game:e.message};wait=30000}
+    await sleep(wait)}
+    delete ytPollers[c.login];})();
+}
+async function ytWatchOffline(){ // every 2 min: is an offline YouTube channel live now?
+  for(const c of S.channels.filter(x=>x.p==="youtube"&&!x.chatId&&!ytPollers[x.login])){
+    try{if(await ytCheckLive(c,false)){save();ytStart(c);toast(t("ytLiveNow",{n:c.name}));lastChansKey=""}
+        else R.live[key(c)]={live:false,game:"@ytOffline"}}
+    catch(e){R.live[key(c)]={live:null,game:e.message}}
+  }
+  store.set("ytUsage",{day:quotaDay(),units:R.ytUnits});
+}
+function ytStopAll(){Object.values(ytPollers).forEach(p=>p.stop=true);for(const k in ytPollers)delete ytPollers[k]}
+function quotaDay(){return new Date(Date.now()-8*3600e3).toISOString().slice(0,10)} // resets midnight Pacific
+
+/* ================= runtime ================= */
+const R={running:false,dets:{},live:{},chat:[],selected:null,unseen:0,wake:null,audio:null,timer:null,demoTimer:null,
+  ytUnits:(u=>u.day===quotaDay()?(u.units||0):0)(store.get("ytUsage",{}))};
+const det=c=>R.dets[key(c)]||(R.dets[key(c)]=new Detector(c.p==="youtube"?Math.max(5,+S.set.ytPoll||10)+2:0));
+function onChat(k,user,text,t){
+  const c=activeChannels().find(x=>key(x)===k);if(!c)return;
+  det(c).add(t||Date.now()/1000,user,text);
+  R.chat.push({p:c.p,c:c.name,u:user,t:text.replace(/\[emote:\d+:(\w+)\]/g,"$1").slice(0,140)});if(R.chat.length>14)R.chat.shift();
+}
+function isDemo(){return S.set.demo}
+function activeChannels(){return isDemo()?DEMO_CHANS:S.channels}
+
+async function refreshLive(){
+  if(isDemo())return;
+  const tw=S.channels.filter(c=>c.p==="twitch"&&c.id);
+  if(S.token&&tw.length){
+    try{const d=await helix("/streams?first=100&"+tw.map(c=>"user_id="+c.id).join("&"));const map={};
+      d.data.forEach(s=>map[s.user_login]={live:true,game:s.game_name,viewers:s.viewer_count});
+      tw.forEach(c=>R.live[key(c)]=map[c.login]||{live:false});
+    }catch(e){console.warn(e)}
+  }
+  const now=Date.now()/1000;
+  S.channels.filter(c=>c.p==="kick").forEach(c=>{const d=R.dets[key(c)];
+    R.live[key(c)]=!c.room?{live:false,game:"@kickNeedId"}:d&&now-d.lastMsg<120?{live:true,game:"@kickActive"}:{live:null,game:R.running?"@kickWaiting":""}});
+}
+
+function tick(){
+  const now=Date.now()/1000;
+  for(const c of activeChannels()){
+    const m=det(c).check(now);
+    if(m){const L=R.live[key(c)]||{};
+      if(c.p==="twitch"&&S.set.gtaOnly&&L.game&&!/grand theft auto/i.test(L.game))continue;
+      if(L.live===false)continue;
+      newMoment(c,m,false);}
+  }
+  if(!isDemo()&&R.running&&(Math.floor(now)%30===0))refreshLive();
+  renderLive();
+}
+
+async function newMoment(c,m,manual){
+  const id="m"+Date.now()+Math.random().toString(36).slice(2,6);
+  const title=((manual?"":(m.top.toUpperCase().slice(0,30)+" 💀 "))+"| "+c.name).slice(0,100);
+  const auto=c.p==="twitch"&&(isDemo()||(S.token&&c.id));
+  const mo={id,p:c.p,login:c.login,name:c.name,time:Date.now(),score:m.score,rate:m.rate,top:manual?"manual":m.top,title,
+    credit:creditFor(c),stream:streamUrl(c),status:auto?"clipping":"alert"};
+  if(c.p==="youtube"&&c.start&&c.vid)mo.replay="https://www.youtube.com/watch?v="+c.vid+"&t="+Math.max(0,Math.floor((mo.time-c.start)/1000)-25)+"s";
+  S.moments.unshift(mo);save();R.unseen++;renderBadge();renderMoments();
+  if(S.set.sound)beep(auto?1:3);
+  if(!auto){toast(t("goClipT",{n:c.name,p:PNAME[c.p]}));return}
+  if(isDemo()){await sleep(2500);mo.status="demo";save();renderMoments();toast(t("demoClip",{n:c.name}));return}
+  try{
+    const dur=Math.min(60,Math.max(5,+S.set.duration||30));
+    let r;
+    try{r=await helix(`/clips?broadcaster_id=${c.id}&has_delay=true&duration=${dur}&title=${encodeURIComponent(title)}`,{method:"POST"})}
+    catch(e){if(e.status===400)r=await helix(`/clips?broadcaster_id=${c.id}&has_delay=true`,{method:"POST"});else throw e}
+    const cid=r.data[0].id;mo.edit=r.data[0].edit_url;mo.url="https://clips.twitch.tv/"+cid;save();renderMoments();
+    for(let i=0;i<8;i++){await sleep(3000);
+      const g=await helix("/clips?id="+encodeURIComponent(cid));
+      if(g.data&&g.data.length){const x=g.data[0];mo.url=x.url;mo.thumb=x.thumbnail_url;mo.status="ready";save();renderMoments();toast(t("clipReady",{n:c.name}));return}}
+    mo.status="ready";mo.note="@noteProc";save();renderMoments();
+  }catch(e){
+    mo.status="alert";
+    mo.note=(e.status===403?"@noteFollow":e.status===404?"@noteNotLive":e.message+t("clipYourself"));
+    save();renderMoments();
+  }
+}
+
+/* ================= start / stop ================= */
+async function start(){
+  if(!activeChannels().length){toast(t("addFirst"));return}
+  R.running=true;
+  try{R.audio=R.audio||new (window.AudioContext||window.webkitAudioContext)();R.audio.resume()}catch(_){}
+  await keepAwake();
+  if(isDemo())startDemo();
+  else{await resolveTwitchIds();twitchChat.start();kickChat.start();
+    S.channels.filter(c=>c.p==="youtube").forEach(ytStart);
+    ytWatchOffline();clearInterval(R.ytT);R.ytT=setInterval(ytWatchOffline,120000);}
+  refreshLive();clearInterval(R.timer);R.timer=setInterval(tick,1000);
+  setStatus();renderLive();renderBanners();
+}
+function stop(){
+  R.running=false;twitchChat.stop();kickChat.stop();ytStopAll();stopDemo();clearInterval(R.timer);clearInterval(R.ytT);
+  store.set("ytUsage",{day:quotaDay(),units:R.ytUnits});
+  if(R.wake){R.wake.release().catch(()=>{});R.wake=null}
+  setStatus();renderLive();renderBanners();
+}
+async function keepAwake(){
+  try{if("wakeLock" in navigator){R.wake=await navigator.wakeLock.request("screen");R.wake.addEventListener("release",()=>R.wake=null)}}catch(_){R.wake=null}
+}
+document.addEventListener("visibilitychange",async()=>{
+  if(document.visibilityState==="visible"&&R.running){
+    if(!R.wake)await keepAwake();
+    if(!isDemo()){if(twitchChat.want&&!twitchChat.ok())twitchChat.connect();if(kickChat.want&&!kickChat.ok())kickChat.connect()}
+    refreshLive();setStatus();renderBanners();
+  }
+});
+function beep(times){try{const a=R.audio;if(!a)return;for(let i=0;i<times;i++){const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+i*0.25;
+  o.frequency.value=times>1?1046:880;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.22,t);
+  g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.2)}}catch(_){}}
+
+/* ================= demo ================= */
+const DEMO_CHANS=[{p:"twitch",login:"demo_gta_king",name:"Demo_GTA_King",id:"1"},
+                  {p:"kick",login:"demo_vicecity",name:"Demo_ViceCity",room:"1"},
+                  {p:"youtube",login:"UCdemo",name:"Demo LosSantos",vid:"demovid00001",chatId:"demo",start:Date.now()-3600e3}];
+function startDemo(){
+  stopDemo();const t0=Date.now()/1000;
+  DEMO_CHANS.forEach(c=>R.live[key(c)]={live:true,game:c.p==="twitch"?"Grand Theft Auto VI":c.p==="kick"?"@kickActive":"@ytLive",viewers:c.p==="twitch"?18400:0});
+  const calm=["hi","gg","first time watching","that car tho","lol","nice","how much money u got"],
+        hype=["KEKW","LMAO 💀","W","NO WAY 😭","clip it","OMEGALUL","????","CLIP THAT"];
+  const loop=(c,base,offset)=>{const go=()=>{const el=Date.now()/1000-t0;
+      const burst=el>offset&&((el-offset)%60)<7;const arr=burst?hype:calm;
+      onChat(key(c),"viewer"+Math.floor(Math.random()*90),arr[Math.floor(Math.random()*arr.length)]);
+      R.demoTimer[c.login]=setTimeout(go,-Math.log(Math.random())*1000/(burst?base*6:base))};go()};
+  R.demoTimer={};loop(DEMO_CHANS[0],3,70);loop(DEMO_CHANS[1],1.2,80);loop(DEMO_CHANS[2],1,90);
+}
+function stopDemo(){if(R.demoTimer)Object.values(R.demoTimer).forEach(clearTimeout);R.demoTimer=null}
+
+/* ================= rendering ================= */
+function setStatus(){
+  const anyOk=isDemo()||twitchChat.ok()||kickChat.ok()||Object.keys(ytPollers).length>0;
+  const live=R.running&&anyOk;
+  $("dot").classList.toggle("on",live);
+  $("status").textContent=t(!R.running?"stopped":isDemo()?"demoRunning":anyOk?"watching":"connecting");
+  const b=$("startBtn");b.textContent=t(R.running?"stop":"start");b.className="big "+(R.running?"grey":"green");
+}
+function renderBanners(){
+  const out=[],chs=S.channels;
+  if(!isDemo()&&!chs.length)out.push(`<div class="banner info">${t("bnAdd")}</div>`);
+  if(!isDemo()&&chs.some(c=>c.p==="twitch")&&!S.token)out.push(`<div class="banner warn">${t("bnTwLogin")}</div>`);
+  if(!isDemo()&&chs.some(c=>c.p==="youtube")&&!S.set.ytKey)out.push(`<div class="banner err">${t("bnYtKey")}</div>`);
+  if(R.running)out.push(`<div class="banner info">${t("bnKeep")}${R.wake?"":t("bnAutoLock")}</div>`);
+  if(isDemo())out.push(`<div class="banner info">${t("bnDemo")}</div>`);
+  $("banners").innerHTML=out.join("");
+}
+let lastChansKey="";
+function renderLive(){
+  const chs=activeChannels(),thr=S.set.threshold;
+  if(!chs.find(c=>key(c)===R.selected))R.selected=null;
+  const sig=lang()+JSON.stringify(chs.map(c=>{const d=R.dets[key(c)],L=R.live[key(c)]||{};return[key(c),L.live,L.game,L.viewers,Math.round(((d&&d.stats.score)||0)*10),Math.round(((d&&d.stats.rate)||0)*10),R.running]}))+R.selected;
+  if(sig!==lastChansKey){lastChansKey=sig;
+    $("chans").innerHTML=chs.length?chs.map(c=>{
+      const k=key(c),d=R.dets[k],st=(d&&d.stats)||{},sc=st.score||0,L=R.live[k]||{};
+      const pct=Math.min(100,sc/(thr*1.5)*100),col=sc>=thr?"var(--hot)":sc>=thr*.6?"var(--warm)":"var(--ok)";
+      const liveTxt=L.live===true?"🔴"+(L.viewers?" "+L.viewers.toLocaleString("en"):""):L.live===false?t("offline"):"";
+      return `<div class="chan ${k===R.selected?"sel":""}" data-k="${esc(k)}"><div class="chead">
+        ${c.img?`<img class="avatar" src="${esc(c.img)}" alt="">`:`<div class="avatar"></div>`}
+        <div class="cmain"><div class="cname">${esc(c.name)}${pbadge(c.p)}</div><div class="cgame">${esc(tg(L.game)||(R.running?"":t("notWatching")))}</div></div>
+        <div class="cstat">${liveTxt}<br>${R.running?(st.rate||0).toFixed(1)+" "+t("msgs"):""}</div>
+        ${isDemo()?"":`<button class="rm" data-rm="${esc(k)}">✕</button>`}</div>
+        <div class="mini"><div style="width:${pct}%;background:${col}"></div></div></div>`}).join("")
+      :`<div class="empty">${t("noStreamers")}</div>`;
+  }
+  $("addForm").style.display=isDemo()?"none":"flex";
+  const pool=chs.filter(c=>(R.live[key(c)]||{}).live!==false);
+  const sc=c=>((R.dets[key(c)]||{stats:{}}).stats.score||0);
+  const hottest=(pool.length?pool:chs).slice().sort((a,b)=>sc(b)-sc(a))[0];
+  const f=chs.find(c=>key(c)===R.selected)||hottest;
+  const show=R.running&&f;$("focus").style.display=show?"block":"none";$("clipBtn").style.display=show?"block":"none";
+  if(show){const st=(R.dets[key(f)]||{stats:{}}).stats,score=st.score||0;
+    $("fname").textContent=(R.selected?"":t("hottest")+" · ")+f.name+" · "+PNAME[f.p];
+    $("score").textContent=score.toFixed(1);$("thr").textContent=thr.toFixed(1);
+    $("fill").style.width=Math.min(100,score/(thr*1.5)*100)+"%";
+    $("fill").style.background=score>=thr?"var(--hot)":score>=thr*.6?"var(--warm)":"var(--ok)";
+    $("rate").textContent=(st.rate||0).toFixed(1);$("base").textContent=(st.baseline||0).toFixed(2);$("hype").textContent=st.hype||0;
+    draw((R.dets[key(f)]||{history:[]}).history,st.baseline||0);
+    $("clipBtn").textContent=t("clipNow",{n:f.name.toUpperCase()});$("clipBtn").dataset.k=key(f);}
+  $("chat").innerHTML=R.chat.length?R.chat.slice().reverse().map(m=>`<div class="msg"><i>${esc(m.c)}</i><span class="${m.p==="kick"?"k":m.p==="youtube"?"y":""}">${esc(m.u)}</span>${esc(m.t)}</div>`).join(""):`<div class="empty">${t("chatEmpty")}</div>`;
+}
+function draw(hist,base){
+  const c=$("chart"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(!w)return;
+  c.width=w*dpr;c.height=h*dpr;const g=c.getContext("2d");g.scale(dpr,dpr);
+  const max=Math.max(1,...hist,base*3)*1.1,step=w/119;
+  g.strokeStyle="#ffffff30";g.setLineDash([4,4]);g.beginPath();const by=h-(base/max)*h;g.moveTo(0,by);g.lineTo(w,by);g.stroke();g.setLineDash([]);
+  if(!hist.length)return;g.beginPath();
+  hist.forEach((v,i)=>{const x=(120-hist.length+i)*step,y=h-(v/max)*h;i?g.lineTo(x,y):g.moveTo(x,y)});
+  g.strokeStyle="#ff4d5e";g.lineWidth=2;g.stroke();g.lineTo(w,h);g.lineTo((120-hist.length)*step,h);g.closePath();g.fillStyle="#ff4d5e22";g.fill();
+}
+function captionFor(m){return `${m.title}\n\n🎥 ${m.credit||m.login}\n\n${S.set.tags}`}
+const HOW={kick:"howKick",youtube:"howYt",twitch:"howTw"};
+function renderMoments(){
+  const ms=S.moments,now=Date.now();
+  $("moments").innerHTML=ms.length?ms.map(m=>{
+    const p=m.p||"twitch",when=new Date(m.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    const fresh=now-m.time<90000;
+    let media="";
+    if(m.status==="alert"){
+      media=fresh?`<a class="golink" href="${esc(m.stream)}" target="_blank" rel="noopener">${t("goClipBtn",{p:PNAME[p]})}</a><div class="how">${t(HOW[p])}</div>`
+        :`<a class="golink" style="background:#2a2a34" href="${esc(m.stream)}" target="_blank" rel="noopener">${t("openStream")}</a><div class="how">${t("tooLate")}${m.replay?t("useReplay"):""}</div>`;
+    }else if(m.thumb){media=`<a class="thumb" href="${esc(m.url)}" target="_blank" rel="noopener" style="background-image:url('${esc(m.thumb)}')"><span class="play">▶</span></a>`}
+    else media=`<div class="thumb">${t(m.status==="clipping"?"making":m.status==="demo"?"demoNoVid":"processing")}</div>`;
+    const tag=m.status==="alert"?(fresh?"alert":"missed"):m.status;
+    const me=(S.me||{}).login;
+    const dl=p==="twitch"&&m.url&&me?`<a href="https://dashboard.twitch.tv/u/${esc(me)}/content/clips" target="_blank" rel="noopener">${t("dlTwitch")}</a>`:
+             p==="kick"?`<a href="https://kick.com/${esc(m.login)}/clips" target="_blank" rel="noopener">${t("dlKick")}</a>`:"";
+    return `<div class="moment"><div class="mhead"><div class="mtitle">${m.top==="manual"?t("manual"):"🔥 "+esc(m.top)}</div><span class="tag ${m.status==="alert"&&fresh?"alert":m.status}">${t("tag_"+tag)}</span></div>
+      <div class="msub"><b>${esc(m.name)}</b>${pbadge(p)} · ${when} · ${t("score")} ${m.score} · ${m.rate} ${t("msgs")}</div>
+      ${m.note?`<div class="merr">${esc(tg(m.note))}</div>`:""}${media}
+      <div class="links">
+        ${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">${t("openClip")}</a>`:""}
+        ${dl}
+        ${m.edit?`<a href="${esc(m.edit)}" target="_blank" rel="noopener">${t("editTrim")}</a>`:""}
+        ${m.replay?`<a href="${esc(m.replay)}" target="_blank" rel="noopener">${t("watchReplay")}</a>`:""}
+        <button data-copy="${esc(m.id)}">${t("copyCap")}</button>
+        ${m.url?`<button data-link="${esc(m.id)}">${t("copyLink")}</button>`:""}
+      </div></div>`}).join(""):`<div class="empty">${t("noMoments")}</div>`;
+}
+setInterval(()=>{if($("v-clips").classList.contains("on"))renderMoments()},15000);
+function renderBadge(){const b=$("badge");b.style.display=R.unseen?"block":"none";b.textContent=R.unseen}
+function renderAcct(){
+  const logged=!!S.token,me=S.me||{};
+  $("acct").innerHTML=logged?`
+    <div class="set"><div><div class="t">${me.login?t("loggedAs",{n:esc(me.login)}):t("loggedNo")}</div><div class="d">${t("acctD")}</div></div>
+      <button class="btn ghost" id="logout">${t("logout")}</button></div>`:`
+    <div class="d" style="font-size:13px;color:var(--dim);margin-bottom:8px">${t("twOptional")}</div>
+    <details><summary>${t("twSetup")}</summary>
+    <ol class="steps" style="margin-top:8px">${t("twSteps",{name:"myclipper"+(R.appNum||(R.appNum=Math.floor(Math.random()*900+100))),r:esc(REDIRECT)})}</ol></details>
+    <input type="text" id="cid" placeholder="${t("cidPh")}" value="${esc(S.clientId)}" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin:8px 0">
+    <button class="big purple" id="loginBtn" style="margin:0">${t("loginBtn")}</button>`;
+  if(logged)$("logout").onclick=()=>{S.token="";S.me=null;save();renderAcct();renderBanners()};
+  else{$("cid").oninput=e=>{S.clientId=e.target.value.trim();save()};
+    $("loginBtn").onclick=login;$("copyRedir").onclick=()=>copy(REDIRECT,t("redirCopied"));}
+}
+function renderSettings(){
+  const s=S.set;$("sens").value=s.threshold;$("dur").value=s.duration;$("cool").value=s.cooldown;
+  $("gtaOnly").checked=s.gtaOnly;$("sound").checked=s.sound;$("tags").value=s.tags;$("demo").checked=s.demo;
+  $("ytKey").value=s.ytKey;$("ytPoll").value=s.ytPoll;sensTxt();quotaTxt();
+}
+function sensTxt(){const x=S.set.threshold;$("sensTxt").textContent=t("sensTxt",{x:x.toFixed(1),l:t(x<2.5?"lvlMore":x>3.8?"lvlHuge":"lvlBal")})}
+function quotaTxt(){const p=Math.max(5,+S.set.ytPoll||10),perHour=3600/p*5,left=Math.max(0,10000-R.ytUnits);
+  $("ytQuota").textContent=t("ytQuota",{a:(10000/perHour).toFixed(1),b:(left/perHour).toFixed(1)})}
+async function copy(text,msg){
+  try{await navigator.clipboard.writeText(text);toast(msg||t("copied"))}
+  catch(_){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");toast(msg||t("copied"))}catch(e){toast(t("copyFail"))}ta.remove()}
+}
+
+/* ================= adding streamers ================= */
+function parseInput(raw){
+  const s=raw.trim();const low=s.toLowerCase();
+  if(/youtube\.com|youtu\.be/.test(low))return{p:"youtube",raw:s};
+  let m=low.match(/kick\.com\/([a-z0-9_\-]+)/)||low.match(/^kick:\s*([a-z0-9_\-]+)$/);if(m)return{p:"kick",login:m[1]};
+  m=low.match(/twitch\.tv\/([a-z0-9_]+)/)||low.match(/^twitch:\s*@?([a-z0-9_]{2,25})$/);if(m)return{p:"twitch",login:m[1]};
+  m=low.match(/^youtube:\s*@?([\w.\-]+)$/);if(m)return{p:"youtube",raw:"@"+m[1]};
+  m=s.match(/^@?([A-Za-z0-9_.\-]{2,40})$/);if(m)return{p:"ask",name:m[1]};
+  return null;
+}
+function addChannel(c){
+  if(S.channels.find(x=>key(x)===key(c))){$("addMsg").textContent=t("already");return false}
+  if(S.channels.length>=10){$("addMsg").textContent=t("max10");return false}
+  S.channels.push(c);save();lastChansKey="";
+  if(R.running){if(c.p==="twitch"){twitchChat.start();twitchChat.sync();resolveTwitchIds()}
+    if(c.p==="kick"&&c.room){kickChat.start();kickChat.sync()}if(c.p==="youtube"&&c.chatId)ytStart(c);refreshLive()}
+  renderLive();renderBanners();$("addIn").value="";$("addMsg").textContent=t("addedN",{n:c.name});return true;
+}
+function showKickFix(slug){
+  $("kickFix").innerHTML=`<div class="kickfix">${t("kickFix",{s:esc(slug)})}
+    <form class="addrow" id="kfForm"><input type="text" id="kfIn" inputmode="numeric" placeholder="${t("kfPh")}"><button>${t("save")}</button></form></div>`;
+  $("kfForm").onsubmit=e=>{e.preventDefault();const room=$("kfIn").value.replace(/\D/g,"");if(!room)return;
+    if(addChannel({p:"kick",login:slug,name:slug,room}))$("kickFix").innerHTML=""};
+}
+$("addForm").onsubmit=async e=>{
+  e.preventDefault();
+  const raw=$("addIn").value;if(!raw.trim())return;
+  const q=parseInput(raw);if(!q){$("addMsg").textContent=t("pasteAny");return}
+  if(q.p==="ask"){askPlatform(q.name);return}
+  if(q.p==="twitch"){
+    let c={p:"twitch",login:q.login,name:q.login};
+    if(S.token){try{const d=await helix("/users?login="+encodeURIComponent(q.login));
+      if(!d.data.length){$("addMsg").textContent=t("noTwitch",{n:q.login});return}
+      const u=d.data[0];c={p:"twitch",login:u.login,id:u.id,name:u.display_name,img:u.profile_image_url}}catch(err){$("addMsg").textContent=err.message;return}}
+    addChannel(c);
+  }else if(q.p==="kick"){
+    $("kickFix").innerHTML="";
+    $("addMsg").textContent=t("lookKick",{n:q.login});
+    try{const k=await kickLookup(q.login);if(!k.room)throw 0;addChannel({p:"kick",login:q.login,name:k.name,img:k.img,room:String(k.room)})}
+    catch(_){$("addMsg").textContent="";showKickFix(q.login)}
+  }else{
+    if(!S.set.ytKey){$("addMsg").innerHTML=t("ytNeedKeyHtml");return}
+    $("addMsg").textContent=t("lookYt");
+    try{const c=await ytResolve(q.raw);store.set("ytUsage",{day:quotaDay(),units:R.ytUnits});
+      if(addChannel(c)){$("addMsg").textContent=t(c.chatId?"addedLive":"addedOff",{n:c.name})}
+      R.live[key(c)]=c.chatId?{live:true,game:"@ytLive"}:{live:false,game:"@ytOffline"};lastChansKey="";renderLive()}
+    catch(err){$("addMsg").textContent=err.message}
+  }
+};
+
+function askPlatform(name){
+  $("addMsg").innerHTML=`${t("askP",{n:esc(name)})}
+    <div class="links" style="margin-top:6px"><button data-pick="youtube">▶ YouTube</button><button data-pick="twitch">Twitch</button><button data-pick="kick">Kick</button></div>`;
+  $("addMsg").querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{
+    const p=b.dataset.pick;$("addIn").value=p==="youtube"?"youtube.com/@"+name:p==="kick"?"kick.com/"+name.toLowerCase():"twitch.tv/"+name.toLowerCase();
+    $("addForm").requestSubmit()});
+}
+
+/* ================= events ================= */
+function showView(v){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id==="v-"+v));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  if(v==="clips"){R.unseen=0;renderBadge();renderMoments()}if(v==="set")quotaTxt();window.scrollTo(0,0)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showView(b.dataset.v));
+$("startBtn").onclick=()=>R.running?stop():start();
+$("clipBtn").onclick=()=>{const c=activeChannels().find(x=>key(x)===$("clipBtn").dataset.k);if(!c)return;
+  const st=(R.dets[key(c)]||{stats:{}}).stats;newMoment(c,{score:+(st.score||0).toFixed(2),rate:+(st.rate||0).toFixed(2),top:"manual"},true);
+  if(c.p==="twitch"&&(S.token||isDemo()))toast(t("clippingN",{n:c.name}));else showView("clips")};
+document.addEventListener("click",e=>{
+  const rm=e.target.closest("[data-rm]");
+  if(rm){e.stopPropagation();if(rm.dataset.armed){const k=rm.dataset.rm;const c=S.channels.find(x=>key(x)===k);
+      S.channels=S.channels.filter(x=>key(x)!==k);delete R.dets[k];delete R.live[k];
+      if(c&&c.p==="youtube"&&ytPollers[c.login]){ytPollers[c.login].stop=true;delete ytPollers[c.login]}
+      save();twitchChat.sync();kickChat.sync();lastChansKey="";renderLive();renderBanners()}
+    else{rm.dataset.armed=1;rm.textContent=t("removeQ");setTimeout(()=>{if(rm.isConnected){delete rm.dataset.armed;rm.textContent="✕"}},2500)}return}
+  const cp=e.target.closest("[data-copy]");if(cp){const m=S.moments.find(x=>x.id===cp.dataset.copy);if(m)copy(captionFor(m),t("capCopied"));return}
+  const lk=e.target.closest("[data-link]");if(lk){const m=S.moments.find(x=>x.id===lk.dataset.link);if(m)copy(m.url,t("linkCopied"));return}
+  const ch=e.target.closest(".chan");if(ch){R.selected=R.selected===ch.dataset.k?null:ch.dataset.k;lastChansKey="";renderLive()}
+});
+document.querySelectorAll("#langPick button").forEach(b=>b.onclick=()=>{S.set.lang=b.dataset.lang;save();applyLang();
+  lastChansKey="";renderAcct();renderSettings();renderBanners();renderMoments();renderLive();setStatus()});
+$("sens").oninput=e=>{S.set.threshold=+e.target.value;save();sensTxt()};
+$("dur").onchange=e=>{S.set.duration=Math.min(60,Math.max(5,+e.target.value||30));e.target.value=S.set.duration;save()};
+$("cool").onchange=e=>{S.set.cooldown=Math.min(600,Math.max(20,+e.target.value||60));e.target.value=S.set.cooldown;save()};
+$("gtaOnly").onchange=e=>{S.set.gtaOnly=e.target.checked;save()};
+$("sound").onchange=e=>{S.set.sound=e.target.checked;save()};
+$("tags").onchange=e=>{S.set.tags=e.target.value;save()};
+$("ytKey").onchange=e=>{S.set.ytKey=e.target.value.trim();save();renderBanners()};
+$("ytPoll").onchange=e=>{S.set.ytPoll=Math.min(60,Math.max(5,+e.target.value||10));e.target.value=S.set.ytPoll;save();quotaTxt()};
+$("demo").onchange=e=>{if(R.running)stop();S.set.demo=e.target.checked;R.dets={};R.chat=[];R.live={};save();lastChansKey="";renderBanners();renderLive();toast(t(S.set.demo?"demoOn":"demoOff"))};
+$("clearClips").onclick=e=>{const b=e.target;if(b.dataset.armed){S.moments=[];save();renderMoments();b.textContent=t("clear");delete b.dataset.armed}
+  else{b.dataset.armed=1;b.textContent=t("clearConfirm");setTimeout(()=>{delete b.dataset.armed;b.textContent=t("clear")},2500)}};
+
+/* ================= boot ================= */
+applyLang();
+readLoginRedirect();
+renderAcct();renderSettings();renderBanners();renderMoments();renderLive();setStatus();
+validate().then(()=>{renderAcct();renderBanners()});
+setInterval(()=>{if(S.token)validate().then(ok=>{if(!ok){renderAcct();renderBanners()}})},3600*1000);
+</script>
+</body>
+</html>
